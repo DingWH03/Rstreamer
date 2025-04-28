@@ -81,6 +81,7 @@ jobs:
         upload_url: ${{ needs.check-or-create-release.outputs.upload_url }}
         asset_path: ./target/x86_64-unknown-linux-gnu/release/Rstream
         asset_name: Rstream-x86_64
+        asset_content_type: application/octet-stream
 
   build-linux-aarch64:
     needs: [check-or-create-release]
@@ -107,6 +108,7 @@ jobs:
         upload_url: ${{ needs.check-or-create-release.outputs.upload_url }}
         asset_path: ./target/aarch64-unknown-linux-gnu/release/Rstream
         asset_name: Rstream-aarch64
+        asset_content_type: application/octet-stream
 
   build-linux-riscv64:
     needs: [check-or-create-release]
@@ -133,3 +135,4 @@ jobs:
         upload_url: ${{ needs.check-or-create-release.outputs.upload_url }}
         asset_path: ./target/riscv64gc-unknown-linux-gnu/release/Rstream
         asset_name: Rstream-riscv64
+        asset_content_type: application/octet-stream
