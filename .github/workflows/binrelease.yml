@@ -100,6 +100,9 @@ jobs:
         sudo apt-get install -y clang gcc-aarch64-linux-gnu
     - name: Build
       run: cargo build --release --target aarch64-unknown-linux-gnu
+      env:
+        CC_aarch64_unknown_linux_gnu: "aarch64-linux-gnu-gcc"
+        AR_aarch64_unknown_linux_gnu: "aarch64-linux-gnu-ar"
     - name: Upload Asset
       uses: actions/upload-release-asset@v1
       env:
@@ -127,6 +130,9 @@ jobs:
         sudo apt-get install -y clang gcc-riscv64-linux-gnu
     - name: Build
       run: cargo build --release --target riscv64gc-unknown-linux-gnu
+      env:
+        CC_riscv64gc_unknown_linux_gnu: "riscv64-linux-gnu-gcc"
+        AR_riscv64gc_unknown_linux_gnu: "riscv64-linux-gnu-ar"
     - name: Upload Asset
       uses: actions/upload-release-asset@v1
       env:
