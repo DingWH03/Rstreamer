@@ -1,0 +1,101 @@
+name: Rust Multi-Arch Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-linux-x86_64:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: x86_64-unknown-linux-gnu
+        override: true
+    - name: Install libclang for x86_64
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang
+    - name: Build Release for x86_64
+      run: cargo build --release --target x86_64-unknown-linux-gnu
+    - name: Upload Release Asset for x86_64
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./target/x86_64-unknown-linux-gnu/release/Rstream
+        asset_name: Rstream-x86_64
+        asset_content_type: application/octet-stream
+
+  build-linux-aarch64:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: aarch64-unknown-linux-gnu
+        override: true
+    - name: Install libclang for aarch64
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang
+    - name: Build Release for aarch64
+      run: cargo build --release --target aarch64-unknown-linux-gnu
+    - name: Upload Release Asset for aarch64
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./target/aarch64-unknown-linux-gnu/release/Rstream
+        asset_name: Rstream-aarch64
+        asset_content_type: application/octet-stream
+
+  build-linux-riscv64:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: riscv64gc-unknown-linux-gnu
+        override: true
+    - name: Install libclang for riscv64
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang
+    - name: Build Release for riscv64
+      run: cargo build --release --target riscv64gc-unknown-linux-gnu
+    - name: Upload Release Asset for riscv64
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./target/riscv64gc-unknown-linux-gnu/release/Rstream
+        asset_name: Rstream-riscv64
+        asset_content_type: application/octet-stream
+
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+ 
