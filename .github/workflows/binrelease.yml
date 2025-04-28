@@ -5,26 +5,62 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write  # 必须的权限声明
+
 jobs:
-  create-release:
+  check-or-create-release:
     runs-on: ubuntu-latest
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      upload_url: ${{ steps.set-upload-url.outputs.upload_url }}
     steps:
-    - name: Create Release
+    - name: Check if Release exists
+      id: check-release
+      uses: actions/github-script@v6
+      env:
+        TAG_NAME: ${{ github.ref_name }}  # 使用正确的标签名变量
+      with:
+        script: |
+          try {
+            const response = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: process.env.TAG_NAME
+            });
+            core.setOutput('upload_url', response.data.upload_url);
+            return true;
+          } catch (error) {
+            if (error.status === 404) {
+              core.setOutput('upload_url', '');
+              return false;
+            }
+            throw error;
+          }
+
+    - name: Create Release if not exists
+      if: steps.check-release.outputs.upload_url == ''
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
+        tag_name: ${{ github.ref_name }}  # 修正变量名
+        release_name: Release ${{ github.ref_name }}
         draft: false
         prerelease: false
 
+    - name: Set final upload_url
+      id: set-upload-url
+      run: |
+        if [ "${{ steps.check-release.outputs.upload_url }}" != "" ]; then
+          echo "upload_url=${{ steps.check-release.outputs.upload_url }}" >> $GITHUB_OUTPUT
+        else
+          echo "upload_url=${{ steps.create_release.outputs.upload_url }}" >> $GITHUB_OUTPUT
+        fi
+
   build-linux-x86_64:
+    needs: [check-or-create-release]
     runs-on: ubuntu-latest
-    needs: [create-release]
     steps:
     - uses: actions/checkout@v3
     - name: Set up Rust
@@ -38,17 +74,17 @@ jobs:
     - name: Build
       run: cargo build --release --target x86_64-unknown-linux-gnu
     - name: Upload Asset
-      uses: actions/upload-release-asset@v2
+      uses: actions/upload-release-asset@v1  # 使用 v1 版本
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        upload_url: ${{ needs.check-or-create-release.outputs.upload_url }}
         asset_path: ./target/x86_64-unknown-linux-gnu/release/Rstream
         asset_name: Rstream-x86_64
 
   build-linux-aarch64:
+    needs: [check-or-create-release]
     runs-on: ubuntu-latest
-    needs: [create-release]
     steps:
     - uses: actions/checkout@v3
     - name: Setup Rust
@@ -64,17 +100,17 @@ jobs:
     - name: Build
       run: cargo build --release --target aarch64-unknown-linux-gnu
     - name: Upload Asset
-      uses: actions/upload-release-asset@v2
+      uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        upload_url: ${{ needs.check-or-create-release.outputs.upload_url }}
         asset_path: ./target/aarch64-unknown-linux-gnu/release/Rstream
         asset_name: Rstream-aarch64
 
   build-linux-riscv64:
+    needs: [check-or-create-release]
     runs-on: ubuntu-latest
-    needs: [create-release]
     steps:
     - uses: actions/checkout@v3
     - name: Setup Rust
@@ -90,10 +126,10 @@ jobs:
     - name: Build
       run: cargo build --release --target riscv64gc-unknown-linux-gnu
     - name: Upload Asset
-      uses: actions/upload-release-asset@v2
+      uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        upload_url: ${{ needs.check-or-create-release.outputs.upload_url }}
         asset_path: ./target/riscv64gc-unknown-linux-gnu/release/Rstream
         asset_name: Rstream-riscv64
